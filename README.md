@@ -1,5 +1,7 @@
 # Project-Grafkom
 Project Grafika Komputer Universitas Yarsi
+
+Judul Proyek : Interactive 3D Human Lung Model
 Nama Kelompok : Semicolon
 Anggota Kelompok
 - Rizky Jounio Selabu / 1402017135
