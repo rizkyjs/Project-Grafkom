@@ -1,0 +1,587 @@
+
+<!-- Licensed under a BSD license. See license.html for license -->
+<!DOCTYPE html>
+<html>
+  <head><meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+    <title>Interactive 3D Human Lung Model</title>
+    <style>
+    html{
+        margin: 0;
+        height: 100%;
+    }
+    body{
+        margin: 0;
+        height: 100%;
+        background-color:#fff; 
+        /*warna background table putih*/
+    }
+     table.t1, th, td{ 
+     margin-top: 10px;
+     margin-right: 10px;
+      padding: 10px; 
+      background-color: #505050;
+      text-align: center;
+      border: 8px solid #111;
+      border-radius: 8px;
+      border-collapse: collapse;
+      border-spacing:10px 0;
+      }
+      th.f{
+           padding-bottom: 1em;
+           border-collapse:separate; 
+      }
+      tr{
+          padding:0 10px;
+      }
+       table.t2{ 
+     margin-top: 10px;
+     margin-right: 35px;
+      padding: 80px; 
+      background-color: #505050;
+      text-align: center;
+      border: 10px solid #606060;
+      border-radius: 10px;
+      }
+    #c {
+        width: 72%;
+        height: 100%;
+        display: block;
+    }
+    </style>
+    
+  </head>
+  
+  <body>
+      <div id="dat">
+
+		</div>
+		
+
+		
+		
+		
+		<table align="right" class = "table-light mt-5 mr-5" id="tbl">
+  <tr class="table-primary ">
+    <th class="border border-dark">Paru-Paru</th>
+  </tr>
+  <tr>
+      <td class="table-light border border-dark">
+          <img src = "images/lung.png" style = "widht:164px;height:200px">
+      </td>
+  </tr>
+  <tr>
+      <td class="table-light border border-dark"><b>Paru-Paru</b> adalah organ pada sistem <br>pernapasan (respirasi) dan berhubungan dengan <br>sistem peredaran darah (sirkulasi) vertebrata</td>
+  </tr>
+</table>
+
+    <canvas id="c"></canvas>
+<script src="https://code.jquery.com/jquery-1.9.1.js"></script>
+<script src="https://code.jquery.com/ui/1.10.2/jquery-ui.js"></script>
+<link rel=stylesheet href="https://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css" />
+<link rel=stylesheet href="https://stemkoski.github.io/Three.js/css/info.css"/>
+<script src="https://stemkoski.github.io/Three.js/js/info.js"></script>
+
+
+<!--JQUERY BOOTSTRAP 4-->
+
+
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+<!--JQUERY BOOTSTRAP 4-->
+
+
+<div id="infoButton"></div>
+<!--<div id="infoBox" title="Demo Information">-->
+<!--This is a demo, part of a collection at-->
+<!--<a href="https://stemkoski.github.io/Three.js/">http://stemkoski.github.io/Three.js/</a>-->
+<!--</div>-->
+  <script type="module">
+import * as THREE from 'https://threejsfundamentals.org/threejs/resources/threejs/r110/build/three.module.js';
+import { GUI } from 'https://threejs.org/examples/jsm/libs/dat.gui.module.js';
+import {OrbitControls} from 'https://threejsfundamentals.org/threejs/resources/threejs/r110/examples/jsm/controls/OrbitControls.js';
+import {OBJLoader2} from 'https://threejsfundamentals.org/threejs/resources/threejs/r110/examples/jsm/loaders/OBJLoader2.js';
+import {MTLLoader} from 'https://threejsfundamentals.org/threejs/resources/threejs/r110/examples/jsm/loaders/MTLLoader.js';
+import {MtlObjBridge} from 'https://threejsfundamentals.org/threejs/resources/threejs/r110/examples/jsm/loaders/obj2/bridge/MtlObjBridge.js';
+var isButtonPressed = 0;
+var camera;
+var renderer;
+var parameters;
+var test;
+var intersects;
+var raycaster;
+var container = document.getElementById('popup');
+var content = document.getElementById('popup-content');
+var closer = document.getElementById('popup-closer');
+var trakeaText;
+var bronkusText;
+var bronkiolusText;
+var pleuraText;
+var alveoliText;
+var lobusKananText, lobusKiriText;
+var group;
+var targetList = [];
+var mouse = new THREE.Vector3(), INTERSECTED;
+var scene;
+var gui;
+var isOnLabel = 0;
+var controls;
+//Button listener
+ document.querySelector('#infoButton').addEventListener('click', function(){
+    console.log("Inan");
+    if(isButtonPressed == 0){
+    initGUI();
+    } else {
+        
+    }
+    isButtonPressed = 1;
+ });
+ 
+   
+  function initGUI(){
+     gui = new GUI();
+  
+  parameters = 
+  {
+    xScale: 0, yScale: 0, zScale: 0, xyzScale:2.5,
+    xPos: 0, yPos: 0, zPos: 0,
+    xRotate: 0, yRotate: 0, zRotate: 0,
+    xyzRotate: 0,
+    biasa: function() { biasaParu() },
+    smoker: function() { smokerParu() },
+    label: function() { labelParu() }
+  }
+
+ var comp1 = gui.add(parameters, 'yRotate').name('Rotasi').min(-10).max(10).step(0.02).listen();
+ var comp2 = gui.add(parameters, 'xyzScale').name('Ukuran').min(1).max(3.4).step(0.02).listen();
+ var folder1 = gui.addFolder('Paru-paru');
+ var comp3 = folder1.add(parameters, 'biasa').name('Original');
+ var comp4 = folder1.add(parameters, 'smoker').name('Perokok');
+ var comp5 = folder1.add(parameters, 'label').name('Label');
+    comp1.onChange(function(value){
+       test.rotation.y = value; 
+    });
+    comp2.onChange(function(value){
+        test.scale.x = value;
+        test.scale.y = value;
+        test.scale.z = value;
+    });  
+  }
+
+
+function main() {
+  const canvas = document.querySelector('#c');
+  renderer = new THREE.WebGLRenderer({canvas, antialias: true});
+  //renderer.setSize( window.innerWidth, window.innerHeight );
+  //renderer.setPixelRatio( window.devicePixelRatio );
+  //document.body.appendChild( renderer.domElement );
+    raycaster = new THREE.Raycaster();
+  const fov = 45;
+  const aspect = 2;  // the canvas default
+  const near = 0.1;
+  const far = 100;
+  camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+  camera.position.set(0, 10, 20);
+
+  controls = new OrbitControls(camera, canvas);
+  controls.target.set(0, 5, 0);
+  controls.enablePan = false;
+  controls.update();
+
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color('0x8E8E8E');
+group = new THREE.Group();
+			scene.add( group );
+
+
+  {
+    const skyColor = 0xB1E1FF;  // light blue
+    const groundColor = 0xB97A20;  // brownish orange
+    const intensity = 1;
+    const light = new THREE.HemisphereLight(skyColor, groundColor, intensity);
+    scene.add(light);
+
+  }
+
+  {
+    const color = 0xFFFFFF;
+    const intensity = 1;
+    const light = new THREE.DirectionalLight(color, intensity);
+    //light.position.set(5, 10, 2);
+    scene.add(light);
+   
+  }
+
+  {
+    const mtlLoader = new MTLLoader();
+    mtlLoader.load('14.mtl', (mtlParseResult) => {
+      const objLoader = new OBJLoader2();
+      const materials =  MtlObjBridge.addMaterialsFromMtlLoader(mtlParseResult);
+      objLoader.addMaterials(materials);
+
+      //materials.Material.side = THREE.DoubleSide;
+      
+      objLoader.load('14.obj', (root) => {
+            test = root;
+           test.position.y = 11;
+           test.position.x = 0;
+           test.scale.x = 2.5;
+           test.scale.y = 2.5;
+           test.scale.z = 2.5;
+        scene.add(test);
+      });
+    });
+    
+   
+  }
+  var selectedObject = null;
+
+
+
+
+
+ 
+
+  function resizeRendererToDisplaySize(renderer) {
+    const canvas = renderer.domElement;
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+    const needResize = canvas.width !== width || canvas.height !== height;
+    if (needResize) {
+      renderer.setSize(width, height, false);
+    }
+    return needResize;
+  }
+    
+    
+  function render() {
+
+    if (resizeRendererToDisplaySize(renderer)) {
+      const canvas = renderer.domElement;
+      camera.aspect = canvas.clientWidth / canvas.clientHeight;
+      camera.updateProjectionMatrix();
+    }
+  
+    
+    renderer.render(scene, camera);
+
+    requestAnimationFrame(render);
+  }
+
+  requestAnimationFrame(render);
+}
+
+function biasaParu(){
+    changeMainParu();
+    controls.enableZoom = true;
+    controls.enableRotate = true;
+    isOnLabel = 0;
+    removeLabels();
+    scene.remove(test);
+    const mtlLoader = new MTLLoader();
+    mtlLoader.load('14.mtl', (mtlParseResult) => {
+      const objLoader = new OBJLoader2();
+      const materials =  MtlObjBridge.addMaterialsFromMtlLoader(mtlParseResult);
+      objLoader.addMaterials(materials);
+
+      //materials.Material.side = THREE.DoubleSide;
+      
+      objLoader.load('14.obj', (root) => {
+           test = root;
+           test.position.y = 11;
+           test.position.x = 0;
+           test.scale.x = 2.5;
+           test.scale.y = 2.5;
+           test.scale.z = 2.5;
+        scene.add(test);
+      });
+    });
+}	
+
+function smokerParu(){
+    changeMainParu();
+    controls.enableZoom = true;
+    controls.enableRotate = true;
+    isOnLabel = 0;
+    removeLabels();
+    scene.remove(test);
+    const mtlLoader = new MTLLoader();
+    mtlLoader.load('rokokedit.mtl', (mtlParseResult) => {
+      const objLoader = new OBJLoader2();
+      const materials =  MtlObjBridge.addMaterialsFromMtlLoader(mtlParseResult);
+      objLoader.addMaterials(materials);
+
+      //materials.Material.side = THREE.DoubleSide;
+      
+      objLoader.load('rokokedit.obj', (root) => {
+           test = root;
+           test.position.y = 5;
+           test.position.x = -1;
+           test.scale.x = 2.5;
+           test.scale.y = 2.5;
+           test.scale.z = 2.5;
+        scene.add(test);
+      });
+    });
+}
+
+function labelParu(){
+    controls.enableZoom = false;
+    controls.enableRotate = false;
+    gui = null;
+    isOnLabel = 1;
+    buatLabels();
+    scene.remove(test);
+    const mtlLoader = new MTLLoader();
+    mtlLoader.load('15.mtl', (mtlParseResult) => {
+      const objLoader = new OBJLoader2();
+      const materials =  MtlObjBridge.addMaterialsFromMtlLoader(mtlParseResult);
+      objLoader.addMaterials(materials);
+
+      //materials.Material.side = THREE.DoubleSide;
+      
+      objLoader.load('15.obj', (root) => {
+           test = root;
+           test.position.y = 5;
+           test.position.x = -1
+           test.scale.x = 2.5;
+           test.scale.y = 2.5;
+           test.scale.z = 2.5;
+        scene.add(test);
+      });
+    });
+}
+function removeLabels(){
+    scene.remove(trakeaText);
+    scene.remove(lobusKananText);
+    scene.remove(lobusKiriText);
+    scene.remove(bronkusText);
+    scene.remove(pleuraText);
+    scene.remove(bronkiolusText);
+    scene.remove(alveoliText);
+}
+
+function buatLabels(){
+     trakeaText = makeTextSprite( "Trakea", 
+		{ fontface: "Helvetica", fontsize: 16, borderColor: {r:0, g:0, b:0, a:1.0}, backgroundColor: {r:100, g:100, b:100, a:0.8} } );
+	trakeaText.position.set(2.3,7,2);
+	scene.add( trakeaText );
+	targetList.push(trakeaText);
+	//group.add(trakeaText);
+	 
+    
+    lobusKananText = makeTextSprite( "Lobus Kanan", 
+		{ fontface: "Helvetica", fontsize: 16, borderColor: {r:0, g:0, b:0, a:1.0}, backgroundColor: {r:100, g:100, b:100, a:0.8} } );
+	lobusKananText.position.set(-4,3,2);
+	scene.add( lobusKananText );
+	
+	lobusKiriText = makeTextSprite( "Lobus Kiri", 
+		{ fontface: "Helvetica", fontsize: 16, borderColor: {r:0, g:0, b:0, a:1.0}, backgroundColor: {r:100, g:100, b:100, a:0.8} } );
+	lobusKiriText.position.set(7,3,2);
+	scene.add( lobusKiriText );
+	
+    bronkusText = makeTextSprite( "Bronkus", 
+		{ fontface: "Helvetica", fontsize: 16, borderColor: {r:0, g:0, b:0, a:1.0}, backgroundColor: {r:100, g:100, b:100, a:0.8} } );
+	bronkusText.position.set(3,3,2);
+	scene.add( bronkusText );
+	//targetList.push(lobusKiriText);
+	bronkiolusText = makeTextSprite( "Bronkiolus", 
+		{ fontface: "Helvetica", fontsize: 16, borderColor: {r:0, g:0, b:0, a:1.0}, backgroundColor: {r:100, g:100, b:100, a:0.8} } );
+	bronkiolusText.position.set(4,5,2);
+	scene.add( bronkiolusText);
+	
+	pleuraText = makeTextSprite( "Pleura", 
+		{ fontface: "Helvetica", fontsize: 16, borderColor: {r:0, g:0, b:0, a:1.0}, backgroundColor: {r:100, g:100, b:100, a:0.8} } );
+	pleuraText.position.set(8,-1.3,2);
+	scene.add( pleuraText);
+//	group.add(lobusKananText);
+    
+    alveoliText = makeTextSprite( "Alveoli", 
+		{ fontface: "Helvetica", fontsize: 16, borderColor: {r:0, g:0, b:0, a:1.0}, backgroundColor: {r:100, g:100, b:100, a:0.8} } );
+	alveoliText.position.set(6,-2,2);
+	scene.add( alveoliText);
+    //targetList.push(lobusKananText);
+    //scene.add(light.target);
+    renderer.domElement.addEventListener("click", onclick, false);
+}
+
+function makeTextSprite( message, parameters )
+    {
+        if ( parameters === undefined ) parameters = {};
+        var fontface = parameters.hasOwnProperty("fontface") ? parameters["fontface"] : "Arial";
+        var fontsize = parameters.hasOwnProperty("fontsize") ? parameters["fontsize"] : 18;
+        var borderThickness = parameters.hasOwnProperty("borderThickness") ? parameters["borderThickness"] : 4;
+        var borderColor = parameters.hasOwnProperty("borderColor") ?parameters["borderColor"] : { r:0, g:0, b:0, a:1.0 };
+        var backgroundColor = parameters.hasOwnProperty("backgroundColor") ?parameters["backgroundColor"] : { r:255, g:255, b:255, a:1.0 };
+        var textColor = parameters.hasOwnProperty("textColor") ?parameters["textColor"] : { r:0, g:0, b:0, a:1.0 };
+
+        var canvas = document.createElement('canvas');
+        var context = canvas.getContext('2d');
+        context.font = "Bold " + fontsize + "px " + fontface;
+        var metrics = context.measureText( message );
+        var textWidth = metrics.width;
+
+        context.fillStyle   = "rgba(" + backgroundColor.r + "," + backgroundColor.g + "," + backgroundColor.b + "," + backgroundColor.a + ")";
+        context.strokeStyle = "rgba(" + borderColor.r + "," + borderColor.g + "," + borderColor.b + "," + borderColor.a + ")";
+
+        context.lineWidth = borderThickness;
+        roundRect(context, borderThickness/2, borderThickness/2, (textWidth + borderThickness) * 1.1, fontsize * 1.4 + borderThickness, 8);
+
+        context.fillStyle = "rgba("+textColor.r+", "+textColor.g+", "+textColor.b+", 1.0)";
+        context.fillText( message, borderThickness, fontsize + borderThickness);
+
+        var texture = new THREE.Texture(canvas) 
+        texture.needsUpdate = true;
+
+        var spriteMaterial = new THREE.SpriteMaterial( { map: texture, useScreenCoordinates: false} );
+        var sprite = new THREE.Sprite( spriteMaterial );
+        sprite.scale.set(0.5 * fontsize, 0.25 * fontsize, 0.75 * fontsize);
+        sprite.center.set( 0.5, 0 );
+        //sprite.material.rotation = Math.PI / 3 * 4;
+        return sprite;  
+    }
+    
+// function for drawing rounded rectangles
+function roundRect(ctx, x, y, w, h, r) 
+{
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.lineTo(x+w-r, y);
+    ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+    ctx.lineTo(x+w, y+h-r);
+    ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+    ctx.lineTo(x+r, y+h);
+    ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+    ctx.lineTo(x, y+r);
+    ctx.quadraticCurveTo(x, y, x+r, y);
+    ctx.closePath();
+    ctx.fill();
+	ctx.stroke();   
+}
+
+function onclick(event){
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    console.log(mouse.x);
+    console.log(mouse.y);
+    //Trakea
+    if(mouse.x > -0.3515625& mouse.x < -0.29166666666666663 & mouse.y > 0.6398104265402844 & mouse.y < 0.7203791469194313){
+        console.log("Trakea");
+        changeTrakea();
+        
+    }
+    //Bronk
+    if(mouse.x > -0.28776041666666663 & mouse.x < -0.19270833333333337 & mouse.y >  0.36492890995260663 & mouse.y < 0.4597156398104265){
+        console.log("Bronkiolus");
+        changeBronkiolus();
+    }
+    //Lobus Kanan
+    if(mouse.x > -0.5638020833333333 & mouse.x < -0.45703125 & mouse.y > 0.1090047393364929 & mouse.y < 0.19905213270142175){
+        console.log("Lobus Kanan");
+        changeLobusKanan();
+    }
+    //Lobus Kiri
+    if(mouse.x > -0.18619791666666663 & mouse.x < -0.10026041666666663 & mouse.y > 0.10426540284360186 & mouse.y < 0.1943127962085308){
+        console.log("Lobus Kiri");
+        changeLobusKiri();
+    }
+    //Bronkus
+    if(mouse.x > -0.38069989395546133 & mouse.x < -0.1983032873806999 & mouse.y > 0.10502283105022836 & mouse.y < 0.19634703196347036){
+        console.log("Bronkus");
+        changeBronkus();
+    }
+    //Alveoli
+    if(mouse.x > -0.22395833333333337 & mouse.x < -0.16927083333333337 & mouse.y > -0.4834123222748816 & mouse.y < -0.3744075829383886){
+        console.log("Alveoli");
+        changeAlveoli();
+    }
+     //PLeura
+    if(mouse.x > -0.15625 & mouse.x < -0.10546875 & mouse.y > -0.3981042654028435 & mouse.y < -0.31753554502369674){
+        console.log("Pleura");
+        changePlura();
+    }
+}
+
+/*image sources:
+https://blog.ruangguru.com/sistem-pernapasan
+https://en.wikipedia.org/wiki/Lung
+https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/Diagram_showing_a_build_up_of_fluid_in_the_lining_of_the_lungs_%28pleural_effusion%29_CRUK_054.svg/1200px-Diagram_showing_a_build_up_of_fluid_in_the_lining_of_the_lungs_%28pleural_effusion%29_CRUK_054.svg.png
+
+*/
+function changeTrakea() {
+			var txt = 1;
+			var tr = document.getElementById("tbl").getElementsByTagName("tr")
+			//tr[0].getElementsByTagName("td")[0].innerHTML = "Trakea";
+			tr[0].getElementsByTagName("th")[0].innerHTML = "Trakea";
+				tr[1].getElementsByTagName("td")[0].innerHTML = "<img src = 'images/trakea.png' style = 'widht:164px;height:200px'>";
+			tr[2].getElementsByTagName("td")[0].innerHTML = "Trakea adalah tuba yang mempunyai <br>diameter antara 20 sampai 25 mm<br> dan panjang sekitar 10 sampai 16 cm.<br> Trakea berbentuk tabung <br>memanjang yang tersusun<br> dari 20 tulang rawan<br> yang memiliki bentuk<br> cincin yang kuat, tetapi fleksibel.";
+}
+
+
+function changeBronkus() {
+			var txt = 1;
+			var tr = document.getElementById("tbl").getElementsByTagName("tr")
+			//tr[0].getElementsByTagName("td")[0].innerHTML = "Trakea";
+			tr[0].getElementsByTagName("th")[0].innerHTML = "Bronkus";
+				tr[1].getElementsByTagName("td")[0].innerHTML = "<img src = 'images/bronkus.png' style = 'widht:164px;height:200px'>";
+			tr[2].getElementsByTagName("td")[0].innerHTML = "Bronkus adalah cabang batang <br>tenggorokan yang terletak setelah <br>tenggorokan (trachea) <br>sebelum paru-paru. Bronkus merupakan saluran<br> udara yang memastikan udara<br> masuk dengan baik dari <br>trakea ke alveolus";
+}
+function changeBronkiolus() {
+			var txt = 1;
+			var tr = document.getElementById("tbl").getElementsByTagName("tr")
+			//tr[0].getElementsByTagName("td")[0].innerHTML = "Trakea";
+			tr[0].getElementsByTagName("th")[0].innerHTML = "Bronkiolus";
+				tr[1].getElementsByTagName("td")[0].innerHTML = "<img src = 'images/bronkiolus.png' style = 'widht:164px;height:200px'>";
+			tr[2].getElementsByTagName("td")[0].innerHTML = "Bronkiolus adalah cabang dari <br>bronkus yang berfungsi untuk<br> menyalurkan udara dari<br> bronkus ke alveoli. Selain itu<br> bronkiolus juga berfungsi untuk<br> mengontrol jumlah udara<br> yang masuk dan keluar saat <br>proses bernapas berlangsung";
+}
+
+function changeAlveoli() {
+			var txt = 1;
+			var tr = document.getElementById("tbl").getElementsByTagName("tr")
+			//tr[0].getElementsByTagName("td")[0].innerHTML = "Trakea";
+			tr[0].getElementsByTagName("th")[0].innerHTML = "Alveoli";
+				tr[1].getElementsByTagName("td")[0].innerHTML = "<img src = 'images/alveoli.jpg' style = 'widht:164px;height:200px'>";
+			tr[2].getElementsByTagName("td")[0].innerHTML = "Alveoli adalah Bagian dari<br> anatomi paru yang satu ini<br> merupakan kelompok terkecil yang<br> disebut kantong alveolar di ujung bronkiolus";
+}
+
+function changeLobusKanan() {
+			var txt = 1;
+			var tr = document.getElementById("tbl").getElementsByTagName("tr")
+			//tr[0].getElementsByTagName("td")[0].innerHTML = "Trakea";
+			tr[0].getElementsByTagName("th")[0].innerHTML = "Lobus Kanan";
+				tr[1].getElementsByTagName("td")[0].innerHTML = "<img src = 'images/lobusKiri.png' style = 'widht:164px;height:200px'>";
+			tr[2].getElementsByTagName("td")[0].innerHTML = "Lobus Kanan adalah Bagian dari<br>kantung paru-paru<br>sebelah kanan yang berisi<br>bronkus, bronkiolus, dan organ lainnya";
+}
+function changePlura(){
+    	var txt = 1;
+			var tr = document.getElementById("tbl").getElementsByTagName("tr")
+			//tr[0].getElementsByTagName("td")[0].innerHTML = "Trakea";
+			tr[0].getElementsByTagName("th")[0].innerHTML = "Plura";
+				tr[1].getElementsByTagName("td")[0].innerHTML = "<img src = 'images/plura.png' style = 'widht:164px;height:200px'>";
+			tr[2].getElementsByTagName("td")[0].innerHTML = "Plura adalah rongga tipis yang<br>berisi cairan di antara dua<br>pleura dari paru-paru kiri maupun kanan.";
+}
+function changeLobusKiri() {
+			var txt = 1;
+			var tr = document.getElementById("tbl").getElementsByTagName("tr")
+			//tr[0].getElementsByTagName("td")[0].innerHTML = "Trakea";
+			tr[0].getElementsByTagName("th")[0].innerHTML = "Lobus Kiri";
+				tr[1].getElementsByTagName("td")[0].innerHTML = "<img src = 'images/lobusKiriReal.png' style = 'widht:164px;height:200px'>";
+			tr[2].getElementsByTagName("td")[0].innerHTML = "Lobus Kiri adalah Bagian dari<br>kantung paru-paru<br>sebelah kanan yang berisi<br>bronkus, bronkiolus, dan organ lainnya";
+}
+
+function changeMainParu(){
+    	var txt = 1;
+			var tr = document.getElementById("tbl").getElementsByTagName("tr")
+			//tr[0].getElementsByTagName("td")[0].innerHTML = "Trakea";
+			tr[0].getElementsByTagName("th")[0].innerHTML = "Paru-paru";
+				tr[1].getElementsByTagName("td")[0].innerHTML = "<img src = 'images/lung.png' style = 'widht:164px;height:200px'>";
+			tr[2].getElementsByTagName("td")[0].innerHTML = "Paru-Paru<br> adalah organ pada sistem <br>pernapasan (respirasi) dan berhubungan dengan <br>sistem peredaran darah (sirkulasi) vertebrata";
+}
+
+main();
+</script>
+
+</html>
